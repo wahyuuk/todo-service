@@ -2,6 +2,7 @@ package com.kuncoro.todo.service;
 
 import com.kuncoro.todo.domain.Status;
 import com.kuncoro.todo.domain.Todo;
+import com.kuncoro.todo.exception.GlobalException;
 import com.kuncoro.todo.repository.TodoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -97,23 +98,20 @@ class TodoServiceTest {
         when(todoRepository.findById(testId)).thenReturn(Optional.of(testTodo));
 
         // When
-        Optional<Todo> result = todoService.findById(testId);
+        Todo result = todoService.findById(testId);
 
         // Then
-        assertTrue(result.isPresent());
-        assertEquals(testTodo, result.get());
+        assertNotNull(result);
+        assertEquals(testTodo, result);
     }
 
     @Test
-    void findById_WhenNotExists_ShouldReturnEmpty() {
+    void findById_WhenNotExists_ShouldThrow() {
         // Given
         when(todoRepository.findById(testId)).thenReturn(Optional.empty());
 
-        // When
-        Optional<Todo> result = todoService.findById(testId);
-
         // Then
-        assertFalse(result.isPresent());
+        assertThrows(GlobalException.class, () -> todoService.findById(testId));
     }
 
     @Test
