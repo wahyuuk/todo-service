@@ -31,8 +31,11 @@ jobs:
     - name: Make Maven wrapper executable
       run: chmod +x ./mvnw
       
-    - name: Validate and compile project
-      run: ./mvnw clean validate compile
+    - name: Clean and validate project
+      run: ./mvnw clean validate
+      
+    - name: Compile project
+      run: ./mvnw compile
       
     - name: Run tests
       run: ./mvnw test
@@ -40,9 +43,14 @@ jobs:
     - name: Package application
       run: ./mvnw package -DskipTests
       
-    - name: Verify build artifacts
+    - name: Verify build completed successfully
       run: |
+        echo "✅ Build completed successfully!"
         echo "Build artifacts:"
         ls -la target/
-        echo "JAR file details:"
-        ls -la target/*.jar 2>/dev/null || echo "No JAR files found"
+        if ls target/*.jar 1> /dev/null 2>&1; then
+          echo "JAR files created:"
+          ls -la target/*.jar
+        else
+          echo "No JAR files found (this might be expected for certain project types)"
+        fi
