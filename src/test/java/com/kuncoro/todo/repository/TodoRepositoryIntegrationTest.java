@@ -38,7 +38,6 @@ class TodoRepositoryIntegrationTest {
         testTodo.setTitle("Integration Test Todo");
         testTodo.setDescription("Test Description for Integration Test");
         testTodo.setStatus(Status.OPEN);
-        // Remove dueDate for now
     }
 
     @Test
