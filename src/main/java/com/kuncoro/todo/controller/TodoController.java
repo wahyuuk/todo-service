@@ -32,7 +32,7 @@ public class TodoController {
     @GetMapping
     public ResponseEntity<Page<TodoResponse>> findAll(
             @RequestParam(value = "status", required = false) Status status,
-            @PageableDefault(size = 10) Pageable pageable) {
+            @PageableDefault() Pageable pageable) {
         
         Page<TodoResponse> response = todoService.findAllResponse(status, pageable);
         return ResponseEntity.ok(response);

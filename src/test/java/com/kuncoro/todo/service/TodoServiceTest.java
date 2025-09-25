@@ -2,6 +2,8 @@ package com.kuncoro.todo.service;
 
 import com.kuncoro.todo.domain.Status;
 import com.kuncoro.todo.domain.Todo;
+import com.kuncoro.todo.dto.CreateTodoRequest;
+import com.kuncoro.todo.dto.TodoResponse;
 import com.kuncoro.todo.exception.GlobalException;
 import com.kuncoro.todo.repository.TodoRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,47 +46,49 @@ class TodoServiceTest {
     }
 
     @Test
-    void create_ShouldReturnSavedTodo() {
+    void create_ShouldReturnSavedTodoResponse() {
         // Given
-        Todo newTodo = new Todo();
-        newTodo.setTitle("New Todo");
+        CreateTodoRequest req = new CreateTodoRequest();
+        req.setTitle("New Todo");
+        req.setDescription("desc");
         when(todoRepository.save(any(Todo.class))).thenReturn(testTodo);
 
         // When
-        Todo result = todoService.create(newTodo);
+        TodoResponse result = todoService.create(req);
 
         // Then
         assertNotNull(result);
         assertEquals(Status.OPEN, result.getStatus());
-        verify(todoRepository).save(newTodo);
+        assertEquals(testTodo.getTitle(), result.getTitle());
+        verify(todoRepository).save(any(Todo.class));
     }
 
     @Test
-    void findAll_WithStatus_ShouldReturnFilteredResults() {
+    void findAll_WithStatus_ShouldReturnFilteredResultsAsResponses() {
         // Given
         PageRequest pageRequest = PageRequest.of(0, 10);
         Page<Todo> expectedPage = new PageImpl<>(List.of(testTodo));
         when(todoRepository.findByStatus(Status.OPEN, pageRequest)).thenReturn(expectedPage);
 
         // When
-        Page<Todo> result = todoService.findAll(Status.OPEN, pageRequest);
+        Page<TodoResponse> result = todoService.findAllResponse(Status.OPEN, pageRequest);
 
         // Then
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
-        assertEquals(testTodo, result.getContent().get(0));
+        assertEquals(testTodo.getId(), result.getContent().get(0).getId());
         verify(todoRepository).findByStatus(Status.OPEN, pageRequest);
     }
 
     @Test
-    void findAll_WithoutStatus_ShouldReturnAllResults() {
+    void findAll_WithoutStatus_ShouldReturnAllResultsAsResponses() {
         // Given
         PageRequest pageRequest = PageRequest.of(0, 10);
         Page<Todo> expectedPage = new PageImpl<>(List.of(testTodo));
         when(todoRepository.findAll(pageRequest)).thenReturn(expectedPage);
 
         // When
-        Page<Todo> result = todoService.findAll(null, pageRequest);
+        Page<TodoResponse> result = todoService.findAllResponse(null, pageRequest);
 
         // Then
         assertNotNull(result);
@@ -93,16 +97,16 @@ class TodoServiceTest {
     }
 
     @Test
-    void findById_WhenExists_ShouldReturnTodo() {
+    void findById_WhenExists_ShouldReturnTodoResponse() {
         // Given
         when(todoRepository.findById(testId)).thenReturn(Optional.of(testTodo));
 
         // When
-        Todo result = todoService.findById(testId);
+        TodoResponse result = todoService.findByIdResponse(testId);
 
         // Then
         assertNotNull(result);
-        assertEquals(testTodo, result);
+        assertEquals(testTodo.getId(), result.getId());
     }
 
     @Test
@@ -111,47 +115,43 @@ class TodoServiceTest {
         when(todoRepository.findById(testId)).thenReturn(Optional.empty());
 
         // Then
-        assertThrows(GlobalException.class, () -> todoService.findById(testId));
+        assertThrows(GlobalException.class, () -> todoService.findByIdResponse(testId));
     }
 
     @Test
-    void updateStatus_WhenExists_ShouldReturnUpdatedTodo() {
+    void updateStatus_WhenExists_ShouldReturnUpdatedTodoResponse() {
         // Given
         when(todoRepository.findById(testId)).thenReturn(Optional.of(testTodo));
-        when(todoRepository.save(any(Todo.class))).thenReturn(testTodo);
+        when(todoRepository.save(any(Todo.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // When
-        Optional<Todo> result = todoService.updateStatus(testId, Status.DONE);
+        TodoResponse result = todoService.updateStatusResponse(testId, Status.DONE);
 
         // Then
-        assertTrue(result.isPresent());
-        assertEquals(Status.DONE, testTodo.getStatus());
-        verify(todoRepository).save(testTodo);
+        assertNotNull(result);
+        assertEquals(Status.DONE, result.getStatus());
+        verify(todoRepository).save(any(Todo.class));
     }
 
     @Test
-    void deleteById_WhenExists_ShouldReturnTrue() {
+    void deleteById_WhenExists_ShouldDelete() {
         // Given
         when(todoRepository.existsById(testId)).thenReturn(true);
 
         // When
-        boolean result = todoService.deleteById(testId);
+        assertDoesNotThrow(() -> todoService.deleteByIdOrThrow(testId));
 
         // Then
-        assertTrue(result);
         verify(todoRepository).deleteById(testId);
     }
 
     @Test
-    void deleteById_WhenNotExists_ShouldReturnFalse() {
+    void deleteById_WhenNotExists_ShouldThrow() {
         // Given
         when(todoRepository.existsById(testId)).thenReturn(false);
 
-        // When
-        boolean result = todoService.deleteById(testId);
-
         // Then
-        assertFalse(result);
+        assertThrows(GlobalException.class, () -> todoService.deleteByIdOrThrow(testId));
         verify(todoRepository, never()).deleteById(any());
     }
 }
